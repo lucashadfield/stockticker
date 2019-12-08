@@ -1,30 +1,33 @@
-import yfinance as yf
+import os
 import datetime
 import yaml
-import pandas as pd
-from notify_run import Notify
 from dateutil.relativedelta import relativedelta
 from functools import lru_cache
+import pandas as pd
+import yfinance as yf
+import pystache
+from notify_run import Notify
 
 
 class StockMovements:
-    def __init__(self, path, period='weekly'):
+    def __init__(self, path: str):
         self.path = path
-        self.holdings, self.tickers = self._read_config(path)
-        self.period = period
+        self.config = self._read_config(path)
+
+        self.holdings = pd.DataFrame(self.config['stocks']).T
+        self.tickers = ' '.join(self.config['stocks'])
 
     def __repr__(self):
-        return f"StockMovements('{self.path}', {self.period}) #{self.tickers}"
+        return f"StockMovements('{self.path}', {self.config['period']}) #{self.tickers}"
 
     @staticmethod
-    def _read_config(path):
-        with open(path) as f:
-            holdings = yaml.safe_load(f)
-
-        return pd.DataFrame(holdings).T, ' '.join(holdings.keys())
+    def _read_config(path: str) -> dict:
+        with open(os.path.expanduser(path)) as f:
+            return yaml.safe_load(f)
 
     @lru_cache()
-    def _fetch_price_data(self, end_date):
+    def _fetch_price_data(self):
+        end_date = datetime.date.today() - relativedelta(days=1)
         start_date = end_date - relativedelta(months=1)
 
         df = (
@@ -47,10 +50,8 @@ class StockMovements:
 
         return change
 
-    def get_returns(self, end_date=None):
-        if end_date is None:
-            end_date = datetime.date.today() - relativedelta(days=1)
-        df = self._fetch_price_data(end_date).join(self.holdings)
+    def get_returns(self):
+        df = self._fetch_price_data().join(self.holdings)
 
         df['month_return'] = df.month_change * df.quantity
         df['week_return'] = df.week_change * df.quantity
@@ -58,14 +59,25 @@ class StockMovements:
 
         return df
 
-    def get_movement(self, period='week', end_date=None):
-        if period not in ['day', 'week', 'month']:
+    def get_gain(self):
+        if self.config['period'] not in ['day', 'week', 'month']:
             raise ValueError("supported periods are 'day', 'week', 'month'")
 
-        return self.get_returns(end_date)[f'{period}_return'].sum()
+        return self.get_returns()[f'{self.config["period"]}_return'].sum()
 
-    def notify_movement(self, period='week', end_date=None):
-        movement = self.get_movement()
+    def get_gain_formatted(self):
+        gain = self.get_gain()
+        return f'{"+" if gain >= 0 else "-"}${gain:.2f}'
+
+    def _prepare_message(self, other):
+        config = self.config.copy()
+
+        if 'message' not in config:
+            config['message'] = '{{gain}}'
+
+        return config.pop('message'), {**config, **other}
+
+    def notify_gain(self):
         Notify().send(
-            f'Total movement in the last {period}:\n{"+" if movement >= 0 else "-"}${movement:.2f}'
+            pystache.render(*self._prepare_message({'gain': self.get_gain_formatted()}))
         )

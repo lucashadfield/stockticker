@@ -1,0 +1,9 @@
+message: "Stock value gain in the last {{period}}:\n{{gain}}"
+period: "week"
+stocks:
+    GOOG:
+        quantity: 10
+    MSFT:
+        quantity: 20
+    AMZN:
+        quantity: 5
