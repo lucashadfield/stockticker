@@ -5,7 +5,7 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 - Notifications use [notify.run](https://github.com/notify-run/notify.run)
-- Stock data from yahoo finance using [yfinance](https://github.com/ranaroussi/yfinance). Check [finance.yahoo.com](finance.yahoo.com) for ticker symbols
+- Stock data from yahoo finance using [yfinance](https://github.com/ranaroussi/yfinance). Check [finance.yahoo.com](https://finance.yahoo.com) for ticker symbols
 - Message formatting uses Mustache ([pystache](https://github.com/defunkt/pystache))
 
 ## Setup:
