@@ -27,7 +27,7 @@ class StockMovements:
 
     @lru_cache()
     def _fetch_price_data(self):
-        end_date = datetime.date.today() - relativedelta(days=1)
+        end_date = datetime.date.today()
         start_date = end_date - relativedelta(months=1)
 
         df = (
