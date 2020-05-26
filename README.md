@@ -10,7 +10,6 @@
 
 ## Setup:
 
-#### gsheets2pandas setup
 1. `git clone https://github.com/lucashadfield/stockticker.git`
 2. `cd stockticker`
 3. `pip install .`
